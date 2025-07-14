@@ -7,10 +7,11 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST requests allowed" });
   }
-
-  const { question } = req.body;
+  const { question, languages = ["Python"] } = req.body;
+  const langList = languages.join(", ");
+  
   if (!question || question.trim().length < 5) {
-    return res.status(400).json({ error: "Please provide a valid DSA question." });
+    return res.status(400).json({ error: "Please provide a valid question" });
   }
 
   const prompt = `
@@ -24,11 +25,13 @@ Please explain:
 1. The brute-force approach
 2. The optimal approach
 3. Time and space complexity
-4. Suggest a similar problem AND provide a clickable Markdown link to it, like:
-   [Problem Name](https://leetcode.com/problems/xyz)
+4. Suggest a similar problem AND provide a clickable Markdown link to it
 
-Respond using Markdown formatting.
-  `;
+Also include code examples in: ${langList}
+
+Use Markdown formatting.
+`;
+
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
