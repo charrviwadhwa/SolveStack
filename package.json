@@ -13,10 +13,15 @@
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.1.11",
     "framer-motion": "^12.23.0",
+    "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.3",
+    "react-syntax-highlighter": "^15.6.1",
+    "rehype-prism-plus": "^2.0.1",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {

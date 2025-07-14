@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -7,29 +6,72 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST requests allowed" });
   }
+
   const { question, languages = ["Python"] } = req.body;
   const langList = languages.join(", ");
-  
+
   if (!question || question.trim().length < 5) {
     return res.status(400).json({ error: "Please provide a valid question" });
   }
 
   const prompt = `
-You're a helpful DSA assistant.
+You are a DSA tutor. Given the problem below, explain it in a beginner-friendly, well-structured way.
 
-A user has asked the following coding/data structures question:
 
-"${question}"
+---
 
-Please explain:
-1. The brute-force approach
-2. The optimal approach
-3. Time and space complexity
-4. Suggest a similar problem AND provide a clickable Markdown link to it
+### Output Format:
 
-Also include code examples in: ${langList}
+## 1. Problem Summary
+Briefly explain the problem in simple terms.
 
-Use Markdown formatting.
+## 2. Input/Output and Constraints
+- Input: ...
+- Output: ...
+- Constraints: ...
+
+## 3. Brute-Force Solution
+
+### Logic  
+Explain the brute-force logic briefly.
+
+### Code  
+\`\`\`${langList.toLowerCase()}
+# Add your code with 1-line comment describing the logic
+\`\`\`
+
+### Time and Space Complexity
+- Time: ...
+- Space: ...
+
+## 4. Optimal Solution
+
+### Logic  
+Explain the optimal logic briefly.
+
+### Code  
+\`\`\`${langList.toLowerCase()}
+# Add your optimal code with 1-line comment
+\`\`\`
+
+### Time and Space Complexity
+- Time: ...
+- Space: ...
+
+## 5. Edge Cases
+List any tricky edge cases that should be handled.
+
+## 6. Similar Questions  
+Give at least 3 relevant problems — from LeetCode, GeeksForGeeks, Codeforces, CodeChef, etc.
+Format them as:
+- [LeetCode: Problem Name](https://leetcode.com/problems/...)
+- [GeeksForGeeks: Problem Name](https://www.geeksforgeeks.org/...)
+
+---
+
+Problem:
+${question}
+Language: ${langList}
 `;
 
 

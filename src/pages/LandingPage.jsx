@@ -1,5 +1,5 @@
 // src/pages/LandingPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -8,87 +8,148 @@ const topics = [
   "Sliding Window", "Bit Manipulation", "Backtracking", "Stack & Queue", "Trie", "Segment Tree"
 ];
 
+// Utility: Random start point for shooting star
+const getRandomStartPoint = () => {
+  const side = Math.floor(Math.random() * 4);
+  const offset = Math.random() * window.innerWidth;
+  switch (side) {
+    case 0: return { x: offset, y: 0, angle: 45 };
+    case 1: return { x: window.innerWidth, y: offset, angle: 135 };
+    case 2: return { x: offset, y: window.innerHeight, angle: 225 };
+    case 3: return { x: 0, y: offset, angle: 315 };
+    default: return { x: 0, y: 0, angle: 45 };
+  }
+};
+
+const ShootingStars = ({
+  minSpeed = 10,
+  maxSpeed = 30,
+  minDelay = 1200,
+  maxDelay = 4200,
+  starColor = "#9E00FF",
+  trailColor = "#2EB9DF",
+  starWidth = 10,
+  starHeight = 1,
+  className = "",
+}) => {
+  const [stars, setStars] = useState([]);
+  const starsRef = useRef([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const createStar = () => {
+      if (!isMounted) return;
+      const { x, y, angle } = getRandomStartPoint();
+      const star = {
+        id: Date.now() + Math.random(),
+        x,
+        y,
+        angle,
+        speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
+        distance: 0,
+        scale: 1,
+      };
+      starsRef.current.push(star);
+      const delay = Math.random() * (maxDelay - minDelay) + minDelay;
+      setTimeout(createStar, delay);
+    };
+
+    createStar();
+
+    const animate = () => {
+      starsRef.current = starsRef.current
+        .map((star) => {
+          const dx = star.speed * Math.cos((star.angle * Math.PI) / 180);
+          const dy = star.speed * Math.sin((star.angle * Math.PI) / 180);
+          const newX = star.x + dx;
+          const newY = star.y + dy;
+          const newDistance = star.distance + star.speed;
+          const newScale = 1 + newDistance / 100;
+
+          if (
+            newX < -100 || newX > window.innerWidth + 100 ||
+            newY < -100 || newY > window.innerHeight + 100
+          ) return null;
+
+          return { ...star, x: newX, y: newY, distance: newDistance, scale: newScale };
+        })
+        .filter(Boolean);
+
+      setStars([...starsRef.current]);
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+    return () => { isMounted = false; };
+  }, [minSpeed, maxSpeed, minDelay, maxDelay]);
+
+  return (
+    <svg className={`absolute inset-0 w-full h-full ${className}`}>
+      <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={trailColor} stopOpacity="0" />
+          <stop offset="100%" stopColor={starColor} stopOpacity="1" />
+        </linearGradient>
+      </defs>
+      {stars.map((star) => (
+        <rect
+          key={star.id}
+          x={star.x}
+          y={star.y}
+          width={starWidth * star.scale}
+          height={starHeight}
+          fill="url(#gradient)"
+          transform={`rotate(${star.angle}, ${star.x + (starWidth * star.scale) / 2}, ${star.y + starHeight / 2})`}
+        />
+      ))}
+    </svg>
+  );
+};
+
 const generateStars = (count) => {
   const stars = [];
   for (let i = 0; i < count; i++) {
-    const top = Math.random() * 100;
-    const left = Math.random() * 100;
-    const size = Math.random() * 2 + 1;
     stars.push(
       <div
-        key={"star" + i}
+        key={i}
         className="absolute bg-white rounded-full animate-pulse"
         style={{
-          top: `${top}%`,
-          left: `${left}%`,
-          width: `${size}px`,
-          height: `${size}px`,
-          opacity: Math.random() * 0.6 + 0.3,
+          top: `${Math.random() * 100}%`,
+          left: `${Math.random() * 100}%`,
+          width: `${Math.random() * 2 + 1}px`,
+          height: `${Math.random() * 2 + 1}px`,
+          opacity: Math.random() * 0.5 + 0.3,
         }}
       />
     );
   }
   return stars;
-};
-
-const generateShootingStars = (count) => {
-  const stars = [];
-  for (let i = 0; i < count; i++) {
-    const top = Math.random() * 90;
-    const delay = Math.random() * 20;
-    const duration = 2 + Math.random() * 2;
-    stars.push(
-      <div
-        key={"shooting" + i}
-        className="absolute w-32 h-[2px] bg-white opacity-0"
-        style={{
-          top: `${top}%`,
-          left: `-${Math.random() * 100}%`,
-          animation: `shoot ${duration}s ease-in-out ${delay}s infinite`,
-        }}
-      />
-    );
-  }
-  return stars;
-};
-
-const injectShootingStarCSS = () => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    @keyframes shoot {
-      0% { transform: translateX(0); opacity: 0; }
-      10% { opacity: 1; }
-      100% { transform: translateX(150vw); opacity: 0; }
-    }
-  `;
-  document.head.appendChild(style);
 };
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [shootingStars, setShootingStars] = useState([]);
-
-  useEffect(() => {
-    injectShootingStarCSS();
-    setShootingStars(generateShootingStars(6));
-  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center overflow-hidden relative font-sans">
-      {/* Galaxy Background */}
+      {/* Galaxy Gradient Background */}
+      <div className="absolute top-6 left-6 z-50 flex items-center gap-2">
+  <img src="/logo2.png" alt="SolveStack Logo" className="h-10 w-10 " />
+  <span className="text-white text-xl font-extrabold leading-none">SolveStack</span>
+</div>
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900 via-black to-black opacity-90" />
 
-      {/* Stars Layer */}
+      {/* Static Stars */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {generateStars(100)}
-        {shootingStars}
+        <ShootingStars />
       </div>
 
-      {/* Glowing Hero Orb */}
+      {/* Hero Glow */}
       <div className="absolute top-[-200px] left-1/2 transform -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-700 via-blue-500 to-purple-700 opacity-50 blur-3xl animate-pulse z-0" />
 
-      {/* Hero Section */}
-      <div className="relative z-10 text-center pt-36 px-6">
+      {/* Hero Content */}
+      <div className="relative z-10 text-center pt-26 px-6">
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold leading-tight mb-6"
           initial={{ opacity: 0, y: -30 }}
@@ -117,22 +178,29 @@ const LandingPage = () => {
         </motion.button>
       </div>
 
-      {/* Scrolling Topics */}
-      <div className="mt-16 w-full bg-black overflow-hidden border-t border-b border-gray-800 py-3">
-        <motion.div
-          className="flex gap-10 text-white text-lg font-semibold whitespace-nowrap"
-          animate={{ x: [0, -1000] }}
-          transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-        >
-          {[...topics, ...topics].map((topic, i) => (
-            <span key={i} className="px-4 text-gray-400 hover:text-white transition">
-              {topic}
-            </span>
-          ))}
-        </motion.div>
-      </div>
+      {/* Scrolling DSA Topics */}
+    <div className="relative mt-16 w-5xl bg-black overflow-hidden py-3">
+  {/* Left Gradient Shadow */}
+  <div className="absolute left-0 top-0 h-full w-14 z-30 pointer-events-none bg-gradient-to-r from-black to-transparent" />
+  
+  {/* Right Gradient Shadow */}
+  <div className="absolute right-0 top-0 h-full w-14 z-30 pointer-events-none bg-gradient-to-l from-black to-transparent" />
 
-      {/* Problem Highlights */}
+  {/* Scrolling Content */}
+  <motion.div
+    className="flex gap-10 text-white text-lg font-semibold whitespace-nowrap z-20 relative"
+    animate={{ x: [0, -1000] }}
+    transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+  >
+    {[...topics, ...topics].map((topic, i) => (
+      <span key={i} className="px-4 text-gray-400 hover:text-white transition">
+        {topic}
+      </span>
+    ))}
+  </motion.div>
+</div>
+
+      {/* Problem Struggles */}
       <div className="mt-24 max-w-5xl px-6 text-center z-10">
         <h2 className="text-3xl font-bold mb-6">Why most students struggle with DSA</h2>
         <div className="grid md:grid-cols-3 gap-8 text-left text-gray-300">
